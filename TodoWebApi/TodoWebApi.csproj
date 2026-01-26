@@ -217,14 +217,18 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helpers\PasswordHelper.cs" />
-    <Compile Include="Models\Auth\LoginRequestModel.cs" />
-    <Compile Include="Models\Auth\LoginResponseModel.cs" />
+    <Compile Include="Models\Auth\LoginWithOtp\SendOtpRequestModel.cs" />
+    <Compile Include="Models\Auth\LoginWithOtp\SendOtpResponseModel.cs" />
+    <Compile Include="Models\Auth\LoginWithOtp\VerifyOtpRequestModel.cs" />
+    <Compile Include="Models\Auth\Login\LoginRequestModel.cs" />
+    <Compile Include="Models\Auth\Login\LoginResponseModel.cs" />
     <Compile Include="Models\Auth\RefreshTokenRequestModel.cs" />
     <Compile Include="Models\Auth\RefreshTokenResponseModel.cs" />
     <Compile Include="Models\Auth\RegisterRequestModel.cs" />
     <Compile Include="Models\Auth\RegisterResponseModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\Auth\TokenService.cs" />
+    <Compile Include="Services\Notification\EmailService.cs" />
     <Compile Include="Validators\AuthValidator.cs" />
   </ItemGroup>
   <ItemGroup>

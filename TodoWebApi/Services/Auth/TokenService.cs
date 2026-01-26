@@ -1,9 +1,12 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Data;
+using System.Data.SqlClient;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using TodoWebApi.Data;
 
 namespace TodoWebApi.Services.Auth
 {
@@ -42,6 +45,21 @@ namespace TodoWebApi.Services.Auth
             {
                 rng.GetBytes(randomBytes);
                 return Convert.ToBase64String(randomBytes);
+            }
+        }
+
+        public static void SaveRefreshToken(int userId, string refreshToken)
+        {
+            using (SqlConnection con = DbHelper.GetConnection())
+            using (SqlCommand cmd = new SqlCommand("Spr_Save_Update_Refresh_Token", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                cmd.Parameters.AddWithValue("@RefreshToken", refreshToken);
+                cmd.Parameters.AddWithValue("@ExpiryDate", DateTime.UtcNow.AddDays(7));
+
+                con.Open();
+                cmd.ExecuteNonQuery();
             }
         }
     }

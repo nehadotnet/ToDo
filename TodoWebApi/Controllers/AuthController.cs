@@ -12,7 +12,9 @@ using TodoWebApi.Data;
 using TodoWebApi.Filters;
 using TodoWebApi.Helpers;
 using TodoWebApi.Models.Auth;
+using TodoWebApi.Models.Auth.LoginWithOtp;
 using TodoWebApi.Services.Auth;
+using TodoWebApi.Services.Notification;
 using TodoWebApi.Validators;
 
 namespace TodoWebApi.Controllers
@@ -229,6 +231,97 @@ namespace TodoWebApi.Controllers
                 response.Status = 500;
                 response.Message = "Internal server error";
                 response.ErrorMsg = ex.Message;
+            }
+
+            return Request.CreateResponse(HttpStatusCode.OK, response);
+        }
+
+        [HttpPost]
+        [Route("send-otp")]
+        public HttpResponseMessage SendOtp([FromBody] SendOtpRequestModel sendOtpRequestModel)
+        {
+            SendOtpResponseModel sendOtpResponseModel = new SendOtpResponseModel();
+            if (string.IsNullOrEmpty(sendOtpRequestModel.Username))
+            {
+                sendOtpResponseModel.Status = 400;
+                sendOtpResponseModel.ErrorMsg = "Uername is required";
+                return Request.CreateResponse(HttpStatusCode.BadRequest, sendOtpResponseModel);
+            }
+
+            using (SqlConnection con = DbHelper.GetConnection())
+            using (SqlCommand cmd = new SqlCommand("Spr_Generate_User_OTP", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Username", sendOtpRequestModel.Username);
+
+                con.Open();
+
+                using(SqlDataReader sdr = cmd.ExecuteReader())
+                {
+                    if (!sdr.Read())
+                    {
+                        sendOtpResponseModel.Status = 404;
+                        sendOtpResponseModel.ErrorMsg = "User not found";
+                        return Request.CreateResponse(HttpStatusCode.NotFound, sendOtpResponseModel);
+                    }
+
+                    string otp = sdr["OTP"].ToString();
+                    string email = sdr["Email"].ToString().ToLower();
+                    string mobile = sdr["MobileNumber"].ToString();
+
+                    EmailService.SendOtp(email, otp);
+                }
+            }
+
+            sendOtpResponseModel.Status = 200;
+            sendOtpResponseModel.Message = "Otp sent successfully";
+            return Request.CreateResponse(HttpStatusCode.OK, sendOtpResponseModel);
+        }
+
+        [HttpPost]
+        [Route("verify-otp")]
+        public HttpResponseMessage VerifyOtp([FromBody] VerifyOtpRequestModel model)
+        {
+            var response = new LoginResponseModel();
+
+            using (SqlConnection con = DbHelper.GetConnection())
+            using (SqlCommand cmd = new SqlCommand("Spr_Verify_User_OTP", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Username", model.Username);
+                cmd.Parameters.AddWithValue("@OTP", model.OTP);
+
+                con.Open();
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        response.status = 401;
+                        response.errorMsg = "Invalid or expired OTP";
+                        return Request.CreateResponse(HttpStatusCode.Unauthorized, response);
+                    }
+
+                    int userId = Convert.ToInt32(reader["UserId"]);
+                    string username = reader["Username"].ToString();
+
+                    string accessToken = TokenService.GenerateAccessToken(username);
+                    string refreshToken = TokenService.GenerateRefreshToken();
+
+                    TokenService.SaveRefreshToken(userId, refreshToken);
+
+                    response.status = 200;
+                    response.message = "Login successfully";
+                    response.data = new User
+                    {
+                        UserId = Convert.ToInt32(reader["UserId"]),
+                        Username = Convert.ToString(reader["Username"]),                      
+                        MobileNumber = Convert.ToString(reader["MobileNumber"]),
+                        FullName = Convert.ToString(reader["FullName"]),
+                        Email = Convert.ToString(reader["Email"]),
+                        AccessToken = accessToken,
+                        RefreshToken = refreshToken
+                    };
+                }
             }
 
             return Request.CreateResponse(HttpStatusCode.OK, response);
