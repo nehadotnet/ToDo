@@ -57,7 +57,7 @@ namespace TodoWebApi.Controllers
 
                         int status = Convert.ToInt32(reader["Status"]);
 
-                        if(status != 200)
+                        if (status != 200)
                         {
                             response.status = status;
                             response.errorMsg = reader["Message"].ToString();
@@ -93,7 +93,7 @@ namespace TodoWebApi.Controllers
                     }
                 }
                 return Request.CreateResponse(HttpStatusCode.OK, response);
-               
+
             }
         }
 
@@ -156,7 +156,7 @@ namespace TodoWebApi.Controllers
                         }
                     }
                     return Request.CreateResponse(HttpStatusCode.OK, response);
-                }            
+                }
             }
             catch (Exception)
             {
@@ -166,73 +166,73 @@ namespace TodoWebApi.Controllers
             }
         }
 
-            [HttpPost]
-            [Route("refresh-token")]
-            public HttpResponseMessage RefreshToken([FromBody] RefreshTokenRequestModel model)
+        [HttpPost]
+        [Route("refresh-token")]
+        public HttpResponseMessage RefreshToken([FromBody] RefreshTokenRequestModel model)
+        {
+            RefreshTokenResponseModel response = new RefreshTokenResponseModel();
+
+            if (string.IsNullOrEmpty(model.RefreshToken))
             {
-                RefreshTokenResponseModel response = new RefreshTokenResponseModel();
-
-                if (string.IsNullOrEmpty(model.RefreshToken))
-                {
-                    response.Status = 400;
-                    response.ErrorMsg = "Refresh token is required";
-                    return Request.CreateResponse(HttpStatusCode.BadRequest, response);
-                }
-
-                try
-                {
-                    using (SqlConnection con = DbHelper.GetConnection())
-                    using (SqlCommand cmd = new SqlCommand("Spr_Validate_RefreshToken", con))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@RefreshToken", model.RefreshToken);
-
-                        con.Open();
-
-                        int userId = 0;
-                        string username = "";
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (!reader.Read())
-                            {
-                                response.Status = 401;
-                                response.ErrorMsg = "Invalid or expired refresh token";
-                                return Request.CreateResponse(HttpStatusCode.Unauthorized, response);
-                            }
-
-                            // Read user info
-                            userId = Convert.ToInt32(reader["UserId"]);
-                            username = Convert.ToString(reader["Username"]);
-                        }
-
-                        string newAccessToken = TokenService.GenerateAccessToken(username);
-                        string newRefreshToken = TokenService.GenerateRefreshToken();
-
-                        using (SqlCommand updateCmd = new SqlCommand("Spr_Save_Update_Refresh_Token", con))
-                        {
-                            updateCmd.CommandType = CommandType.StoredProcedure;
-                            updateCmd.Parameters.AddWithValue("@UserId", userId);
-                            updateCmd.Parameters.AddWithValue("@RefreshToken", newRefreshToken);
-                            updateCmd.Parameters.AddWithValue("@ExpiryDate", DateTime.UtcNow.AddDays(7));
-                            updateCmd.ExecuteNonQuery();
-                        }
-
-                        response.Status = 200;
-                        response.Message = "Token refreshed successfully";
-                        response.AccessToken = newAccessToken;
-                        response.RefreshToken = newRefreshToken;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    response.Status = 500;
-                    response.Message = "Internal server error";
-                    response.ErrorMsg = ex.Message;
-                }
-
-                return Request.CreateResponse(HttpStatusCode.OK, response);
+                response.Status = 400;
+                response.ErrorMsg = "Refresh token is required";
+                return Request.CreateResponse(HttpStatusCode.BadRequest, response);
             }
+
+            try
+            {
+                using (SqlConnection con = DbHelper.GetConnection())
+                using (SqlCommand cmd = new SqlCommand("Spr_Validate_RefreshToken", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@RefreshToken", model.RefreshToken);
+
+                    con.Open();
+
+                    int userId = 0;
+                    string username = "";
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            response.Status = 401;
+                            response.ErrorMsg = "Invalid or expired refresh token";
+                            return Request.CreateResponse(HttpStatusCode.Unauthorized, response);
+                        }
+
+                        // Read user info
+                        userId = Convert.ToInt32(reader["UserId"]);
+                        username = Convert.ToString(reader["Username"]);
+                    }
+
+                    string newAccessToken = TokenService.GenerateAccessToken(username);
+                    string newRefreshToken = TokenService.GenerateRefreshToken();
+
+                    using (SqlCommand updateCmd = new SqlCommand("Spr_Save_Update_Refresh_Token", con))
+                    {
+                        updateCmd.CommandType = CommandType.StoredProcedure;
+                        updateCmd.Parameters.AddWithValue("@UserId", userId);
+                        updateCmd.Parameters.AddWithValue("@RefreshToken", newRefreshToken);
+                        updateCmd.Parameters.AddWithValue("@ExpiryDate", DateTime.UtcNow.AddDays(7));
+                        updateCmd.ExecuteNonQuery();
+                    }
+
+                    response.Status = 200;
+                    response.Message = "Token refreshed successfully";
+                    response.AccessToken = newAccessToken;
+                    response.RefreshToken = newRefreshToken;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Status = 500;
+                response.Message = "Internal server error";
+                response.ErrorMsg = ex.Message;
+            }
+
+            return Request.CreateResponse(HttpStatusCode.OK, response);
+        }
 
     }
 }
