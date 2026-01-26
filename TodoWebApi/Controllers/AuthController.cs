@@ -169,7 +169,7 @@ namespace TodoWebApi.Controllers
         }
 
         [HttpPost]
-        [Route("refresh-token")]
+        [Route("refresh_token")]
         public HttpResponseMessage RefreshToken([FromBody] RefreshTokenRequestModel model)
         {
             RefreshTokenResponseModel response = new RefreshTokenResponseModel();
@@ -237,14 +237,14 @@ namespace TodoWebApi.Controllers
         }
 
         [HttpPost]
-        [Route("send-otp")]
+        [Route("login_with_otp")]
         public HttpResponseMessage SendOtp([FromBody] SendOtpRequestModel sendOtpRequestModel)
         {
             SendOtpResponseModel sendOtpResponseModel = new SendOtpResponseModel();
-            if (string.IsNullOrEmpty(sendOtpRequestModel.Username))
+            if (string.IsNullOrEmpty(sendOtpRequestModel.Email) && string.IsNullOrEmpty(sendOtpRequestModel.Mobilenumber))
             {
                 sendOtpResponseModel.Status = 400;
-                sendOtpResponseModel.ErrorMsg = "Uername is required";
+                sendOtpResponseModel.ErrorMsg = "Email/Mobile number is required";
                 return Request.CreateResponse(HttpStatusCode.BadRequest, sendOtpResponseModel);
             }
 
@@ -252,11 +252,19 @@ namespace TodoWebApi.Controllers
             using (SqlCommand cmd = new SqlCommand("Spr_Generate_User_OTP", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@Username", sendOtpRequestModel.Username);
+
+                if (!string.IsNullOrEmpty(sendOtpRequestModel.Email))
+                {
+                    cmd.Parameters.AddWithValue("@Email", sendOtpRequestModel.Email);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@MobileNumber", sendOtpRequestModel.Mobilenumber);
+                }
 
                 con.Open();
 
-                using(SqlDataReader sdr = cmd.ExecuteReader())
+                using (SqlDataReader sdr = cmd.ExecuteReader())
                 {
                     if (!sdr.Read())
                     {
@@ -269,7 +277,15 @@ namespace TodoWebApi.Controllers
                     string email = sdr["Email"].ToString().ToLower();
                     string mobile = sdr["MobileNumber"].ToString();
 
-                    EmailService.SendOtp(email, otp);
+                    if (!string.IsNullOrEmpty(email))
+                    {
+                        EmailService.SendOtp(email, otp);
+                    }
+                    else if (!string.IsNullOrEmpty(mobile))
+                    {
+                        SmsService.SendOtp(mobile, otp);
+                    }
+
                 }
             }
 
@@ -284,11 +300,25 @@ namespace TodoWebApi.Controllers
         {
             var response = new LoginResponseModel();
 
+            if ((string.IsNullOrEmpty(model.Email) && string.IsNullOrEmpty(model.MobileNumber)) && string.IsNullOrEmpty(model.OTP))
+            {
+                response.status = 400;
+                response.errorMsg = "Email/Mobile and OTP are required";
+                return Request.CreateResponse(HttpStatusCode.BadRequest, response);
+            }
+
             using (SqlConnection con = DbHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand("Spr_Verify_User_OTP", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@Username", model.Username);
+                if (!string.IsNullOrEmpty(model.Email))
+                {
+                    cmd.Parameters.AddWithValue("@Email", model.Email);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@MobileNumber", model.MobileNumber);
+                }
                 cmd.Parameters.AddWithValue("@OTP", model.OTP);
 
                 con.Open();
@@ -313,8 +343,8 @@ namespace TodoWebApi.Controllers
                     response.message = "Login successfully";
                     response.data = new User
                     {
-                        UserId = Convert.ToInt32(reader["UserId"]),
-                        Username = Convert.ToString(reader["Username"]),                      
+                        UserId = userId,
+                        Username = username,
                         MobileNumber = Convert.ToString(reader["MobileNumber"]),
                         FullName = Convert.ToString(reader["FullName"]),
                         Email = Convert.ToString(reader["Email"]),

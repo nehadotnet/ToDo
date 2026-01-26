@@ -7,6 +7,7 @@ namespace TodoWebApi.Models.Auth.LoginWithOtp
 {
     public class SendOtpRequestModel
     {
-        public string Username { get; set; }
+        public string Email { get; set; }
+        public string Mobilenumber { get; set; }
     }
 }
