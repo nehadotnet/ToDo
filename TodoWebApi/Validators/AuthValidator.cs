@@ -15,15 +15,15 @@ namespace TodoWebApi.Validators
         public static string LoginValidate(LoginRequestModel model)
         {
             if (model == null)
-                return "Username and password required";
+                return "Login ID and password are required";
 
-            if (string.IsNullOrWhiteSpace(model.username))
-                return "Username is required";
+            if (string.IsNullOrWhiteSpace(model.LoginId))
+                return "Invalid credentials";
 
-            if (string.IsNullOrWhiteSpace(model.password))
+            if (string.IsNullOrWhiteSpace(model.Password))
                 return "Password is required";
 
-            if (model.password.Length < 6)
+            if (model.Password.Length < 6)
                 return "Password should be greater than or equal to 6.";
 
             return null;

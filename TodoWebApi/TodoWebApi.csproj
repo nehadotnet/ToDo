@@ -212,6 +212,7 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Data\DbHelper.cs" />
+    <Compile Include="Enums\OtpPurpose.cs" />
     <Compile Include="Filters\CustomAuthorizeAttribute.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -226,6 +227,7 @@
     <Compile Include="Models\Auth\RefreshTokenResponseModel.cs" />
     <Compile Include="Models\Auth\RegisterRequestModel.cs" />
     <Compile Include="Models\Auth\RegisterResponseModel.cs" />
+    <Compile Include="Models\Auth\ResetPasswordRequestModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\Auth\TokenService.cs" />
     <Compile Include="Services\Notification\EmailService.cs" />

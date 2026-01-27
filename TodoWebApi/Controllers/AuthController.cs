@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Web.Http;
 using System.Web.WebPages;
 using TodoWebApi.Data;
+using TodoWebApi.Enums;
 using TodoWebApi.Filters;
 using TodoWebApi.Helpers;
 using TodoWebApi.Models.Auth;
@@ -38,12 +39,12 @@ namespace TodoWebApi.Controllers
             }
             else
             {
-                string hashedPassword = PasswordHelper.HashPassword(loginRequestModel.password);
+                string hashedPassword = PasswordHelper.HashPassword(loginRequestModel.Password);
                 using (SqlConnection con = DbHelper.GetConnection())
                 using (SqlCommand cmd = new SqlCommand("Spr_User_Login", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@Username", loginRequestModel.username);
+                    cmd.Parameters.AddWithValue("@LoginId", loginRequestModel.LoginId);
                     cmd.Parameters.AddWithValue("@Password", hashedPassword);
 
                     con.Open();
@@ -69,12 +70,14 @@ namespace TodoWebApi.Controllers
                         response.status = 200;
                         response.message = reader["Message"].ToString();
                         int userId = Convert.ToInt32(reader["UserId"]);
+                        string username = Convert.ToString(reader["Username"]);
+
 
                         response.data = new User
                         {
                             UserId = Convert.ToInt32(reader["UserId"]),
-                            Username = Convert.ToString(reader["Username"]),
-                            AccessToken = TokenService.GenerateAccessToken(loginRequestModel.username),
+                            Username = username,
+                            AccessToken = TokenService.GenerateAccessToken(userId.ToString()),
                             MobileNumber = Convert.ToString(reader["MobileNumber"]),
                             FullName = Convert.ToString(reader["FullName"]),
                             Email = Convert.ToString(reader["Email"]),
@@ -237,7 +240,7 @@ namespace TodoWebApi.Controllers
         }
 
         [HttpPost]
-        [Route("login_with_otp")]
+        [Route("login_with_otp")] // 1st API - Forget Password to send the OTP
         public HttpResponseMessage SendOtp([FromBody] SendOtpRequestModel sendOtpRequestModel)
         {
             SendOtpResponseModel sendOtpResponseModel = new SendOtpResponseModel();
@@ -279,7 +282,7 @@ namespace TodoWebApi.Controllers
 
                     if (!string.IsNullOrEmpty(email))
                     {
-                        EmailService.SendOtp(email, otp);
+                        EmailService.SendOtp(email, otp, sendOtpRequestModel.OtpPurpose);
                     }
                     else if (!string.IsNullOrEmpty(mobile))
                     {
@@ -356,6 +359,43 @@ namespace TodoWebApi.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK, response);
         }
+
+        [HttpPost]
+        [Route("forgot_password/reset")] // 2ND API - Forget Password - OTP Verify & Password Update in DB
+        public HttpResponseMessage ResetPassword([FromBody] ResetPasswordRequestModel model)
+        {
+            if (string.IsNullOrEmpty(model.LoginId) ||
+                string.IsNullOrEmpty(model.OTP) ||
+                string.IsNullOrEmpty(model.NewPassword))
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, "Invalid request");
+            }
+
+            if (model.NewPassword.Length < 6)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, "Password should be greather than or equal to 6.");
+            }
+
+            string hashedPassword = PasswordHelper.HashPassword(model.NewPassword);
+
+            using (SqlConnection con = DbHelper.GetConnection())
+            using (SqlCommand cmd = new SqlCommand("Spr_Reset_User_Password", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@LoginId", model.LoginId);
+                cmd.Parameters.AddWithValue("@OTP", model.OTP);
+                cmd.Parameters.AddWithValue("@NewPassword", hashedPassword);
+
+                con.Open();
+                int rows = cmd.ExecuteNonQuery();
+
+                if (rows == 0)
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, "Invalid or expired OTP");
+            }
+
+            return Request.CreateResponse(HttpStatusCode.OK, "Password updated successfully");
+        }
+
 
     }
 }
