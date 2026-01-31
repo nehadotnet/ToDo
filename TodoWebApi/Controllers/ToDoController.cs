@@ -8,6 +8,7 @@ using System.Web.Http;
 using TodoWebApi.Data;
 using TodoWebApi.Models.Common;
 using TodoWebApi.Models.ToDo;
+using TodoWebApi.Validators;
 
 namespace TodoWebApi.Controllers
 {
@@ -19,6 +20,13 @@ namespace TodoWebApi.Controllers
         public HttpResponseMessage AddTodo([FromBody] AddTodoRequestModel addTodoRequestModel)
         {
             ApiResponse<AddTodoResponseModel> apiResponse = new ApiResponse<AddTodoResponseModel>();
+            var error = TodoValidator.AddTodoValidate(addTodoRequestModel);
+            if (error != null)
+            {
+                apiResponse.Status = 400;
+                apiResponse.ErrorMsg = error;
+                return Request.CreateResponse(HttpStatusCode.BadRequest,apiResponse);
+            }
             try
             {
                 using (SqlConnection con = DbHelper.GetConnection())
@@ -68,9 +76,17 @@ namespace TodoWebApi.Controllers
 
         [Route("get_todo")]
         [HttpGet]
-        public HttpResponseMessage TodoList([FromBody] ReadTodoRequestModel readTodoRequestModel)
+        public HttpResponseMessage TodoList([FromBody] GetTodoRequestModel readTodoRequestModel)
         {
-            ApiResponse<List<ReadTodoResponseModel>> apiResponse = new ApiResponse<List<ReadTodoResponseModel>>();
+            ApiResponse<List<GetTodoResponseModel>> apiResponse = new ApiResponse<List<GetTodoResponseModel>>();
+
+            var error = TodoValidator.GetTodoValidate(readTodoRequestModel);
+            if (error != null)
+            {
+                apiResponse.Status = 400;
+                apiResponse.ErrorMsg = error;
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, apiResponse);
+            }
 
             try
             {
@@ -89,10 +105,10 @@ namespace TodoWebApi.Controllers
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        List<ReadTodoResponseModel> todos = new List<ReadTodoResponseModel>();
+                        List<GetTodoResponseModel> todos = new List<GetTodoResponseModel>();
                         while (reader.Read())
                         {
-                            todos.Add(new ReadTodoResponseModel
+                            todos.Add(new GetTodoResponseModel
                             {
                                 TodoId = Convert.ToInt32(reader["ToDo_Id"]),
                                 Title = reader["ToDo_Title"].ToString(),
@@ -125,6 +141,13 @@ namespace TodoWebApi.Controllers
         public HttpResponseMessage DeleteTodo([FromBody] DeleteTodoRequestModel deleteTodoRequestModel)
         {
             ApiResponse<object> apiResponse = new ApiResponse<object>();
+            var error = TodoValidator.DeleteTodoValidate(deleteTodoRequestModel);
+            if (error != null)
+            {
+                apiResponse.Status = 400;
+                apiResponse.ErrorMsg = error;
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, apiResponse);
+            }
 
             try
             {
@@ -173,6 +196,14 @@ namespace TodoWebApi.Controllers
         public HttpResponseMessage UpdateTodo([FromBody] UpdateTodoRequestModel updateTodoRequestModel)
         {
             ApiResponse<object> apiResponse = new ApiResponse<object>();
+            
+            var error = TodoValidator.UpdateTodoValidate(updateTodoRequestModel);
+            if(error != null)
+            {
+                apiResponse.Status = 400;
+                apiResponse.ErrorMsg = error;
+                 return Request.CreateResponse(HttpStatusCode.InternalServerError,apiResponse);
+            }
             try
             {
                 using (SqlConnection con = DbHelper.GetConnection())

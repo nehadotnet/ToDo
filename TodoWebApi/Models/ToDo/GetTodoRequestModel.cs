@@ -5,7 +5,7 @@ using System.Web;
 
 namespace TodoWebApi.Models.ToDo
 {
-    public class ReadTodoRequestModel
+    public class GetTodoRequestModel
     {
         public int UserId { get; set; }
     }
