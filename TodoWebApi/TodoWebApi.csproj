@@ -232,6 +232,7 @@
     <Compile Include="Models\Common\ApiResponse.cs" />
     <Compile Include="Models\ToDo\AddTodoRequestModel.cs" />
     <Compile Include="Models\ToDo\AddTodoResponseModel.cs" />
+    <Compile Include="Models\ToDo\DeleteTodoRequestModel.cs" />
     <Compile Include="Models\ToDo\ReadTodoRequestModel.cs" />
     <Compile Include="Models\ToDo\ReadTodoResponseModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

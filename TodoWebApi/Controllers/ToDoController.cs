@@ -97,7 +97,7 @@ namespace TodoWebApi.Controllers
                                 TodoId = Convert.ToInt32(reader["ToDo_Id"]),
                                 Title = reader["ToDo_Title"].ToString(),
                                 Description = reader["Description"].ToString(),
-                                DueDate =reader["Due_date"].ToString(),
+                                DueDate = reader["Due_date"].ToString(),
                                 RemainingDays = Convert.ToInt32(reader["Remaining_Days"])
                             });
                         }
@@ -108,6 +108,54 @@ namespace TodoWebApi.Controllers
 
                         return Request.CreateResponse(HttpStatusCode.OK, apiResponse);
 
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                apiResponse.Status = 500;
+                apiResponse.ErrorMsg = ex.Message;
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, apiResponse);
+            }
+        }
+
+        [Route("delete_todo")]
+        [HttpPost]
+        public HttpResponseMessage DeleteTodo([FromBody] DeleteTodoRequestModel deleteTodoRequestModel)
+        {
+            ApiResponse<object> apiResponse = new ApiResponse<object>();
+
+            try
+            {
+                using (SqlConnection con = DbHelper.GetConnection())
+                using (SqlCommand cmd = new SqlCommand("Spr_ToDo_CRUD", con))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@ToDo_Id", deleteTodoRequestModel.TodoId);
+                    cmd.Parameters.AddWithValue("@UserId", deleteTodoRequestModel.UserId);
+                    cmd.Parameters.AddWithValue("@ToDo_Title", "");
+                    cmd.Parameters.AddWithValue("@Description", "");
+                    cmd.Parameters.AddWithValue("@Due_date", "");
+                    cmd.Parameters.AddWithValue("@Action", "D");
+
+                    con.Open();
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            apiResponse.Status = 500;
+                            apiResponse.ErrorMsg = "Unexpected error";
+                            apiResponse.Message = "Todo list fetched successfully";
+
+                            return Request.CreateResponse(HttpStatusCode.InternalServerError, apiResponse);
+                        }
+
+                        apiResponse.Status = Convert.ToInt32(reader["Status"]);
+                        apiResponse.Message = reader["Message"].ToString();
+
+                        return Request.CreateResponse((HttpStatusCode)apiResponse.Status, apiResponse);
 
                     }
                 }
