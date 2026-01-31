@@ -10,6 +10,7 @@ namespace TodoWebApi
         public static void Register(HttpConfiguration config)
         {
             // Web API configuration and services
+            config.MessageHandlers.Add(new Handlers.DeviceLoggingHandler());
 
             // Web API routes
             config.MapHttpAttributeRoutes();

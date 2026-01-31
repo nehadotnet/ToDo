@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Http;
@@ -18,6 +20,14 @@ namespace TodoWebApi
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+
+            string logFolder = Server.MapPath(ConfigurationManager.AppSettings["DeviceLogFolder"]);
+
+            if (!Directory.Exists(logFolder))
+            {
+                Directory.CreateDirectory(logFolder);
+            }
+            Helpers.LogCleanupHelper.CleanupOldLogs();
         }
     }
 }
