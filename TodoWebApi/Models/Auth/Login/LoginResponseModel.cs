@@ -7,14 +7,6 @@ namespace TodoWebApi.Models.Auth
 {
     public class LoginResponseModel
     {
-        public int status { get; set; }
-        public string message { get; set; }
-        public User data { get; set; }
-        public string errorMsg { get; set; }
-    }
-
-    public class User
-    {
         public int UserId { get; set; }
         public string Username { get; set; }
         public string Email { get; set; }

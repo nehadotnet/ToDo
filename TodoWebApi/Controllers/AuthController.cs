@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Web.Helpers;
 using System.Web.Http;
 using System.Web.WebPages;
 using TodoWebApi.Data;
@@ -14,6 +15,7 @@ using TodoWebApi.Filters;
 using TodoWebApi.Helpers;
 using TodoWebApi.Models.Auth;
 using TodoWebApi.Models.Auth.LoginWithOtp;
+using TodoWebApi.Models.Common;
 using TodoWebApi.Services.Auth;
 using TodoWebApi.Services.Notification;
 using TodoWebApi.Validators;
@@ -27,14 +29,14 @@ namespace TodoWebApi.Controllers
         [HttpPost]
         public HttpResponseMessage Login([FromBody] LoginRequestModel loginRequestModel)
         {
-            LoginResponseModel response = new LoginResponseModel();
+            ApiResponse<LoginResponseModel> response = new ApiResponse<LoginResponseModel>();
 
             var error = AuthValidator.LoginValidate(loginRequestModel);
 
             if (error != null)
             {
-                response.status = 400;
-                response.errorMsg = error;
+                response.Status = 400;
+                response.ErrorMsg = error;
                 return Request.CreateResponse(HttpStatusCode.BadRequest, response);
             }
             else
@@ -53,8 +55,8 @@ namespace TodoWebApi.Controllers
                     {
                         if (!reader.Read())
                         {
-                            response.status = 500;
-                            response.errorMsg = "Unexpected error";
+                            response.Status = 500;
+                            response.ErrorMsg = "Unexpected error";
                             return Request.CreateResponse(HttpStatusCode.InternalServerError, response);
                         }
 
@@ -62,18 +64,18 @@ namespace TodoWebApi.Controllers
 
                         if (status != 200)
                         {
-                            response.status = status;
-                            response.errorMsg = reader["Message"].ToString();
+                            response.Status = status;
+                            response.ErrorMsg = reader["Message"].ToString();
                             return Request.CreateResponse((HttpStatusCode)status, response);
                         }
 
-                        response.status = 200;
-                        response.message = reader["Message"].ToString();
+                        response.Status = 200;
+                        response.Message = reader["Message"].ToString();
                         int userId = Convert.ToInt32(reader["UserId"]);
                         string username = Convert.ToString(reader["Username"]);
 
 
-                        response.data = new User
+                        response.Data = new LoginResponseModel
                         {
                             UserId = Convert.ToInt32(reader["UserId"]),
                             Username = username,
@@ -81,7 +83,9 @@ namespace TodoWebApi.Controllers
                             MobileNumber = Convert.ToString(reader["MobileNumber"]),
                             FullName = Convert.ToString(reader["FullName"]),
                             Email = Convert.ToString(reader["Email"]),
+
                         };
+
                         reader.Close();
 
                         string refreshToken = TokenService.GenerateRefreshToken();
@@ -94,7 +98,7 @@ namespace TodoWebApi.Controllers
                             refreshCmd.Parameters.AddWithValue("@ExpiryDate", DateTime.UtcNow.AddDays(7));
                             refreshCmd.ExecuteNonQuery();
                         }
-                        response.data.RefreshToken = refreshToken;
+                        response.Data.RefreshToken = refreshToken;
                     }
                 }
                 return Request.CreateResponse(HttpStatusCode.OK, response);
@@ -301,12 +305,12 @@ namespace TodoWebApi.Controllers
         [Route("verify-otp")]
         public HttpResponseMessage VerifyOtp([FromBody] VerifyOtpRequestModel model)
         {
-            var response = new LoginResponseModel();
+            var response = new ApiResponse<LoginResponseModel>();
 
             if ((string.IsNullOrEmpty(model.Email) && string.IsNullOrEmpty(model.MobileNumber)) && string.IsNullOrEmpty(model.OTP))
             {
-                response.status = 400;
-                response.errorMsg = "Email/Mobile and OTP are required";
+                response.Status = 400;
+                response.ErrorMsg = "Email/Mobile and OTP are required";
                 return Request.CreateResponse(HttpStatusCode.BadRequest, response);
             }
 
@@ -329,8 +333,8 @@ namespace TodoWebApi.Controllers
                 {
                     if (!reader.Read())
                     {
-                        response.status = 401;
-                        response.errorMsg = "Invalid or expired OTP";
+                        response.Status = 401;
+                        response.ErrorMsg = "Invalid or expired OTP";
                         return Request.CreateResponse(HttpStatusCode.Unauthorized, response);
                     }
 
@@ -342,9 +346,9 @@ namespace TodoWebApi.Controllers
 
                     TokenService.SaveRefreshToken(userId, refreshToken);
 
-                    response.status = 200;
-                    response.message = "Login successfully";
-                    response.data = new User
+                    response.Status = 200;
+                    response.Message = "Login successfully";
+                    response.Data = new LoginResponseModel
                     {
                         UserId = userId,
                         Username = username,
