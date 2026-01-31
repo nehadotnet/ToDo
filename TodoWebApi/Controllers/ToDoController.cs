@@ -16,6 +16,7 @@ namespace TodoWebApi.Controllers
     public class ToDoController : ApiController
     {
         [Route("add_todo")]
+        [Authorize]
         [HttpPost]
         public HttpResponseMessage AddTodo([FromBody] AddTodoRequestModel addTodoRequestModel)
         {
@@ -37,7 +38,7 @@ namespace TodoWebApi.Controllers
                     cmd.Parameters.AddWithValue("@UserId", addTodoRequestModel.UserId);
                     cmd.Parameters.AddWithValue("@ToDo_Title", addTodoRequestModel.Title);
                     cmd.Parameters.AddWithValue("@Description", addTodoRequestModel.Description);
-                    cmd.Parameters.AddWithValue("@Due_date", addTodoRequestModel.DueDate);
+                    cmd.Parameters.AddWithValue("@Due_date", addTodoRequestModel.DueDate ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Action", "C");
 
                     con.Open();
@@ -75,6 +76,7 @@ namespace TodoWebApi.Controllers
         }
 
         [Route("get_todo")]
+        [Authorize]
         [HttpGet]
         public HttpResponseMessage TodoList([FromBody] GetTodoRequestModel readTodoRequestModel)
         {
@@ -214,7 +216,7 @@ namespace TodoWebApi.Controllers
                     cmd.Parameters.AddWithValue("@UserId", updateTodoRequestModel.UserId);
                     cmd.Parameters.AddWithValue("@ToDo_Title", updateTodoRequestModel.Title);
                     cmd.Parameters.AddWithValue("@Description", updateTodoRequestModel.Description);
-                    cmd.Parameters.AddWithValue("@Due_date", updateTodoRequestModel.DueDate);
+                    cmd.Parameters.AddWithValue("@Due_date", updateTodoRequestModel.DueDate ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Action", "U");
 
                     con.Open();

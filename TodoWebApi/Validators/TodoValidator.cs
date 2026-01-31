@@ -25,8 +25,8 @@ namespace TodoWebApi.Validators
             if (string.IsNullOrWhiteSpace(model.Description))
                 return "Todo description is required";
 
-            if (model.DueDate < DateTime.Today)
-                return "Duedate can not be in the past";
+            //if (model.DueDmodel.DueDate < DateTime.Today)
+            //    return "Duedate can not be in the past";
 
             return null;
         }
