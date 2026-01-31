@@ -235,6 +235,7 @@
     <Compile Include="Models\ToDo\DeleteTodoRequestModel.cs" />
     <Compile Include="Models\ToDo\ReadTodoRequestModel.cs" />
     <Compile Include="Models\ToDo\ReadTodoResponseModel.cs" />
+    <Compile Include="Models\ToDo\UpdateTodoRequestModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\Auth\TokenService.cs" />
     <Compile Include="Services\Notification\EmailService.cs" />

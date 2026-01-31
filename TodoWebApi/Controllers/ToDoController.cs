@@ -67,7 +67,7 @@ namespace TodoWebApi.Controllers
         }
 
         [Route("get_todo")]
-        [HttpPost]
+        [HttpGet]
         public HttpResponseMessage TodoList([FromBody] ReadTodoRequestModel readTodoRequestModel)
         {
             ApiResponse<List<ReadTodoResponseModel>> apiResponse = new ApiResponse<List<ReadTodoResponseModel>>();
@@ -152,6 +152,52 @@ namespace TodoWebApi.Controllers
                             return Request.CreateResponse(HttpStatusCode.InternalServerError, apiResponse);
                         }
 
+                        apiResponse.Status = Convert.ToInt32(reader["Status"]);
+                        apiResponse.Message = reader["Message"].ToString();
+
+                        return Request.CreateResponse((HttpStatusCode)apiResponse.Status, apiResponse);
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                apiResponse.Status = 500;
+                apiResponse.ErrorMsg = ex.Message;
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, apiResponse);
+            }
+        }
+
+        [Route("update_todo")]
+        [HttpPost]
+        public HttpResponseMessage UpdateTodo([FromBody] UpdateTodoRequestModel updateTodoRequestModel)
+        {
+            ApiResponse<object> apiResponse = new ApiResponse<object>();
+            try
+            {
+                using (SqlConnection con = DbHelper.GetConnection())
+                using (SqlCommand cmd = new SqlCommand("Spr_ToDo_CRUD", con))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@ToDo_Id", updateTodoRequestModel.TodoId);
+                    cmd.Parameters.AddWithValue("@UserId", updateTodoRequestModel.UserId);
+                    cmd.Parameters.AddWithValue("@ToDo_Title", updateTodoRequestModel.Title);
+                    cmd.Parameters.AddWithValue("@Description", updateTodoRequestModel.Description);
+                    cmd.Parameters.AddWithValue("@Due_date", updateTodoRequestModel.DueDate);
+                    cmd.Parameters.AddWithValue("@Action", "U");
+
+                    con.Open();
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            apiResponse.Status = 500;
+                            apiResponse.ErrorMsg = "Unexpected Error";
+                            return Request.CreateResponse(HttpStatusCode.InternalServerError, apiResponse);
+                        }
+
+                        int status = Convert.ToInt32(reader["Status"]);
                         apiResponse.Status = Convert.ToInt32(reader["Status"]);
                         apiResponse.Message = reader["Message"].ToString();
 
