@@ -12,11 +12,11 @@ using TodoWebApi.Validators;
 
 namespace TodoWebApi.Controllers
 {
+    [Authorize]
     [RoutePrefix("api/todo")]
     public class ToDoController : ApiController
     {
         [Route("add_todo")]
-        [Authorize]
         [HttpPost]
         public HttpResponseMessage AddTodo([FromBody] AddTodoRequestModel addTodoRequestModel)
         {
@@ -76,7 +76,6 @@ namespace TodoWebApi.Controllers
         }
 
         [Route("get_todo")]
-        [Authorize]
         [HttpGet]
         public HttpResponseMessage TodoList([FromBody] GetTodoRequestModel readTodoRequestModel)
         {
@@ -100,7 +99,7 @@ namespace TodoWebApi.Controllers
                     cmd.Parameters.AddWithValue("@UserId", readTodoRequestModel.UserId);
                     cmd.Parameters.AddWithValue("@ToDo_Title", "");
                     cmd.Parameters.AddWithValue("@Description", "");
-                    cmd.Parameters.AddWithValue("@Due_date", "");
+                    cmd.Parameters.AddWithValue("@Due_date", DBNull.Value);
                     cmd.Parameters.AddWithValue("@Action", "R");
 
                     con.Open();
