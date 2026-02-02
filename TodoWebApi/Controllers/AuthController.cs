@@ -110,15 +110,15 @@ namespace TodoWebApi.Controllers
         [Route("register")]
         public HttpResponseMessage Register(RegisterRequestModel registerRequestModel)
         {
-            RegisterResponseModel response = new RegisterResponseModel();
+            ApiResponse<RegisterResponseModel> response = new ApiResponse<RegisterResponseModel>();
 
             try
             {
                 var error = AuthValidator.RegisterValidate(registerRequestModel);
                 if (error != null)
                 {
-                    response.status = 400;
-                    response.errorMsg = error;
+                    response.Status = 400;
+                    response.ErrorMsg = error;
                     return Request.CreateResponse(HttpStatusCode.BadRequest, response);
                 }
                 else
@@ -143,8 +143,8 @@ namespace TodoWebApi.Controllers
                             {
                                 if (!reader.Read())
                                 {
-                                    response.status = 500;
-                                    response.errorMsg = "Unexpected error";
+                                    response.Status = 500;
+                                    response.ErrorMsg = "Unexpected error";
                                     return Request.CreateResponse(HttpStatusCode.InternalServerError, response);
                                 }
 
@@ -152,14 +152,17 @@ namespace TodoWebApi.Controllers
 
                                 if (status != 200)
                                 {
-                                    response.status = status;
-                                    response.errorMsg = reader["Message"].ToString();
+                                    response.Status = status;
+                                    response.ErrorMsg = reader["Message"].ToString();
                                     return Request.CreateResponse((HttpStatusCode)status, response);
                                 }
 
-                                response.status = 200;
-                                response.message = "Thank you for registering successfully";
-                                response.loginMessage = "Please log in using your registered email and password.";
+                                response.Status = 200;
+                                response.Message = "Thank you for registering successfully";
+                                response.Data = new RegisterResponseModel
+                                {
+                                    LoginMessage = "Please log in using your registered email and password."
+                                };                               
 
                             }
                         }
@@ -169,8 +172,8 @@ namespace TodoWebApi.Controllers
             }
             catch (Exception)
             {
-                response.status = 500;
-                response.message = "Internal server error";
+                response.Status = 500;
+                response.Message = "Internal server error";
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, response);
             }
         }
@@ -179,7 +182,7 @@ namespace TodoWebApi.Controllers
         [Route("refresh_token")]
         public HttpResponseMessage RefreshToken([FromBody] RefreshTokenRequestModel model)
         {
-            RefreshTokenResponseModel response = new RefreshTokenResponseModel();
+           ApiResponse<RefreshTokenResponseModel> response = new ApiResponse<RefreshTokenResponseModel>();
 
             if (string.IsNullOrEmpty(model.RefreshToken))
             {
@@ -229,8 +232,12 @@ namespace TodoWebApi.Controllers
 
                     response.Status = 200;
                     response.Message = "Token refreshed successfully";
-                    response.AccessToken = newAccessToken;
-                    response.RefreshToken = newRefreshToken;
+                    response.Data = new RefreshTokenResponseModel
+                    {
+                        AccessToken = newAccessToken,
+                        RefreshToken = newRefreshToken,
+                    };
+                    
                 }
             }
             catch (Exception ex)
@@ -247,7 +254,7 @@ namespace TodoWebApi.Controllers
         [Route("login_with_otp")] // 1st API - Forget Password to send the OTP
         public HttpResponseMessage SendOtp([FromBody] SendOtpRequestModel sendOtpRequestModel)
         {
-            SendOtpResponseModel sendOtpResponseModel = new SendOtpResponseModel();
+            ApiResponse<SendOtpResponseModel> sendOtpResponseModel = new ApiResponse<SendOtpResponseModel>();
             if (string.IsNullOrEmpty(sendOtpRequestModel.Email) && string.IsNullOrEmpty(sendOtpRequestModel.Mobilenumber))
             {
                 sendOtpResponseModel.Status = 400;
